@@ -204,10 +204,15 @@ async function loadCoach() {
         + "these findings. Everything below works without it.";
       return;
     }
+    if (c.error) {
+      el.className = "coach note";
+      el.innerHTML = `Couldn't reach the model: ${esc(c.error)} `
+        + `<button class="linkbtn" onclick="loadCoach()">Try again</button>`;
+      return;
+    }
     if (!c.insights || !c.insights.length) {
       el.className = "coach note";
-      el.innerHTML = `Couldn't reach the model${c.error ? `: ${esc(c.error)}` : "."} `
-        + `<button class="linkbtn" onclick="loadCoach()">Try again</button>`;
+      el.textContent = "Nothing notable beyond the findings below right now.";
       return;
     }
     el.className = "coachwrap";
@@ -220,8 +225,8 @@ async function loadCoach() {
         <h4>${esc(i.headline)}</h4>
         <p>${esc(i.detail)}</p>
       </article>`).join("")}</div>
-      <p class="coach-note">Interpreted by ${esc(c.model)} from the computed findings below —
-         it connects the numbers, it never invents them.</p>`;
+      <p class="coach-note">Found by ${esc(c.model)} across your merchants and transactions,
+         grounded in the computed numbers — it connects the data, it never invents figures.</p>`;
   } catch (e) {
     el.className = "coach note";
     el.innerHTML = `Couldn't load the coach's read: ${esc(e.message)}. `

@@ -1,40 +1,54 @@
 """Tier 2 — the LLM coach.
 
-Reads the *deterministic* facts produced by discover.py and returns 3-5 typed
-insights that add something the raw findings don't already say: connecting two
-findings, explaining what a number implies, or singling out what deserves
-attention. The hard rule: the model interprets, ranks, and connects — it never
-produces a number. Every figure it cites comes from the facts bundle, which was
-computed exactly from the local database.
+Tier 1 (discover.py) already computes the obvious findings. This tier hands the
+model the *raw material behind them* — every merchant with its counts and date
+range, the monthly spend-by-category series, and the biggest transactions — and
+asks for 3-5 insights that are genuinely NOT in the findings already shown:
+cross-merchant redundancies, timing correlations, concentration, behavioral
+tells. Fewer-but-novel beats padding with restatements.
 
-Optional by design: with no LLM key the app is fully useful without this, and
-nothing leaves the machine. When enabled, only the computed facts (aggregates
-and finding summaries) are sent — never the raw transaction ledger.
+Data note: with a key set, this sends merchant names and transaction samples to
+the configured endpoint (the user opted into "anything and everything"). Figures
+must be quoted from the facts or summed from them — never invented — so the
+guardrail against fabricated numbers holds even though the model now sees data.
 """
 import json
 
-from . import config, db, discover, llm, queries
+from . import analysis, config, db, discover, llm, queries
 
 SYSTEM = (
-    "You are a sharp, calm personal finance analyst.\n"
-    "You are given FACTS computed exactly from someone's transaction data, including the "
-    "deterministic findings already displayed to them.\n\n"
-    "Return 4 or 5 insights that ADD something those findings don't already state (3 only if the "
-    "data is genuinely thin). Good insights:\n"
-    "- connect two or more findings into a single point\n"
-    "- explain what a number actually implies for this person\n"
-    "- single out what genuinely deserves attention, or reassure that something looks fine\n"
-    "Never simply restate a finding in different words.\n\n"
+    "You are a sharp financial analyst who finds non-obvious patterns a person wouldn't spot "
+    "themselves. You are reviewing FACTS computed exactly from someone's transactions: the "
+    "deterministic findings ALREADY SHOWN to them, plus the raw material behind them — every "
+    "merchant with count/total/category/date-range, monthly spend by category, and their biggest "
+    "transactions.\n\n"
+    "Return 3 to 5 insights that are genuinely NOVEL — NOT already stated in the findings shown. "
+    "Return FEWER (even 2) rather than pad with restatements or filler. An empty answer beats a "
+    "generic one.\n\n"
+    "GREAT insights (be this specific — name merchants, months, amounts):\n"
+    "- Redundancy: \"3 food-delivery services (DoorDash, Uber Eats, Grubhub) total $X/mo.\"\n"
+    "- Timing/correlation: \"Dining jumped from $X to $Y in March and stayed there.\"\n"
+    "- Concentration: \"68% of your shopping is a single merchant, Amazon.\"\n"
+    "- Behavioral tells: a merchant that started or stopped; a category that tracks another.\n"
+    "- Cross-finding math the findings didn't state.\n\n"
+    "BANNED — never do these:\n"
+    "- Restating a finding already shown (if a 'subscriptions' finding exists, don't say 'you have "
+    "subscriptions').\n"
+    "- Generic advice ('consider reducing discretionary spending', 'watch your budget').\n"
+    "- Alarmism about normal numbers. Do NOT flag the overall net or margin as concerning — it is "
+    "usually an artifact and not actionable.\n"
+    "- Vague hedging.\n"
+    "Weak examples to avoid: \"Dining and shopping are your top discretionary categories\" "
+    "(restates). \"Your margins are thin, keep an eye on it\" (alarmist + generic).\n\n"
     "Rules:\n"
-    "- Every figure you cite must appear verbatim in the facts. Never invent or recompute a number.\n"
-    "- headline: under 60 characters, concrete and specific. No fluff, no questions.\n"
-    "- detail: one or two plain-language sentences.\n"
-    "- metric: the single most relevant figure, copied exactly as written in the facts, for example "
-    "$756/mo. Use an empty string if no single figure fits.\n"
-    "- Never wrap figures in quotation marks. Write $963, not \"$963\".\n"
-    "- kind: 'pattern' for recurring behaviour, 'opportunity' for something worth changing, "
-    "'watch' for something to keep an eye on, 'observation' for neutral context.\n"
-    "- Be non-judgmental. A one-off trip or a big purchase is not a problem to be fixed."
+    "- Every figure must be copied verbatim from the facts, or a sum/difference of figures that "
+    "appear in the facts. Never estimate or invent a number.\n"
+    "- headline: under 60 characters, concrete and specific. detail: one or two plain sentences.\n"
+    "- metric: the single most relevant figure, exactly as written (e.g. $756/mo), or an empty "
+    "string. Never wrap figures in quotation marks.\n"
+    "- kind: 'pattern' (recurring behaviour), 'opportunity' (worth changing), 'watch' (keep an eye "
+    "on), 'observation' (neutral context).\n"
+    "- Calm and non-judgmental. A trip or a big purchase is not a problem to be fixed."
 )
 
 SCHEMA = {
@@ -63,18 +77,27 @@ SCHEMA = {
 _cache = {}
 
 
-def _fingerprint():
+def _rows(sql, params=()):
     with db.get_conn() as conn:
-        r = conn.execute("SELECT COUNT(*) c, COALESCE(MAX(date),'') m FROM transactions").fetchone()
+        return [dict(r) for r in conn.execute(sql, params).fetchall()]
+
+
+def _fingerprint():
+    r = _rows("SELECT COUNT(*) c, COALESCE(MAX(date),'') m FROM transactions")[0]
     return f"{r['c']}:{r['m']}:{config.LLM_MODEL}"
 
 
 def facts():
-    """The exact, computed bundle the model is allowed to talk about.
-
-    Figures are pre-formatted so the model can only quote them as written.
-    """
+    """Everything the model may reason over. All dollar figures are pre-formatted."""
     s = queries.get_summary()
+    merchants = _rows(
+        "SELECT payee, category, COUNT(*) n, ROUND(SUM(-amount),2) total, MIN(date) f, MAX(date) l "
+        "FROM transactions WHERE amount < 0 AND category != 'Transfers' AND payee != '' "
+        "GROUP BY LOWER(payee) HAVING total > 0 ORDER BY total DESC LIMIT 90")
+    ot = analysis.category_over_time(top=8)
+    big = _rows(
+        "SELECT date, payee, category, ROUND(-amount,2) amt FROM transactions "
+        "WHERE amount < 0 AND category != 'Transfers' ORDER BY amount ASC LIMIT 30")
     return {
         "totals_all_time": {
             "money_in": f"${s['income']:,.0f}",
@@ -82,15 +105,22 @@ def facts():
             "net": f"${s['net']:,.0f}",
             "transactions": s["count"],
         },
-        "findings_already_shown": [{"headline": d["title"], "detail": d["summary"]}
-                                   for d in discover.discoveries()],
+        "findings_already_shown_do_not_restate": [
+            {"headline": d["title"], "detail": d["summary"]} for d in discover.discoveries()],
+        "every_merchant": [
+            f"{m['payee']} · {m['n']}x · ${m['total']:,.0f} total · {m['category']} · {m['f']}→{m['l']}"
+            for m in merchants],
+        "monthly_spend_by_category": {
+            "months": ot["months"],
+            "series": {sr["name"]: [f"${v:,.0f}" for v in sr["data"]] for sr in ot["series"]},
+        },
+        "biggest_transactions": [
+            f"{b['date']} · {b['payee']} · ${b['amt']:,.0f} · {b['category']}" for b in big],
     }
 
 
 def _clean(insight):
-    """Models like to wrap quoted figures in quotation marks — strip them."""
-    out = {k: (v.replace('"', "").strip() if isinstance(v, str) else v)
-           for k, v in insight.items()}
+    out = {k: (v.replace('"', "").strip() if isinstance(v, str) else v) for k, v in insight.items()}
     if out.get("kind") not in ("observation", "pattern", "opportunity", "watch"):
         out["kind"] = "observation"
     return out

@@ -117,11 +117,18 @@ transactions behind it:
 
 **Tier 2 — the coach (optional).** With an LLM key set, 3–5 short insight cards appear
 above the feed, returned as **structured output** (typed: observation / pattern /
-opportunity / watch, each with a headline, a metric, and a detail). They're asked to
-*add* something the findings don't already say — connecting two of them, or explaining
-what a number implies — rather than narrating. **Every figure comes from Tier 1; the
-model connects the numbers, it never invents them.** Without a key, everything above
-still works.
+opportunity / watch, each with a headline, a metric, and a detail). The model is given
+the raw material behind the findings — every merchant with counts and dates, the
+monthly category series, the biggest transactions — and asked for things the
+deterministic feed *can't* surface: cross-merchant redundancies, timing correlations,
+concentration (*"51 Lyft rides vs 26 Uber," "233 coffee runs split across two brands,"
+"fuel hit $2,380 across three gas stations"*). Fewer-but-novel beats padding.
+
+**Every figure is quoted or summed from the data — the model never invents a number.**
+
+> Heads up: with a key set, this tier sends your merchant names and transaction samples
+> to the configured endpoint. Without a key, no data leaves the machine and everything
+> above still works.
 
 Charts use a vendored copy of ECharts (no CDN, fully offline).
 
