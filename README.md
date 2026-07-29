@@ -151,7 +151,7 @@ your local data (it can look, never change anything).
 |---|---|---|
 | `LLM_BASE_URL` | `https://openrouter.ai/api/v1` | Any OpenAI-compatible endpoint. OpenAI: `https://api.openai.com/v1`. Local Ollama: `http://localhost:11434/v1`. Your proxy: whatever URL. |
 | `LLM_API_KEY` | *(empty)* | Required only for the advisor. `ollama` for local. |
-| `LLM_MODEL` | `anthropic/claude-opus-4.1` | Any model your endpoint serves. |
+| `LLM_MODEL` | `google/gemini-3.5-flash` | Any model your endpoint serves. |
 | `DB_PATH` | `./data/finance.db` | Where your local data lives. |
 
 **Want a local-only advisor?** Install [Ollama](https://ollama.com), run a model,

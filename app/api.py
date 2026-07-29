@@ -1,4 +1,4 @@
-"""FastAPI app: serves the local dashboard and the JSON API.
+"""FastAPI app: serves Daybook and its local JSON API.
 
 Binds to 127.0.0.1 only — reachable from your machine, nobody else's.
 Run:  python -m app.api      (or)   uvicorn app.api:app --reload
@@ -24,7 +24,11 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Personal Finance Hub", lifespan=lifespan)
+app = FastAPI(
+    title="Daybook",
+    description="The local API behind Daybook's private money ledger.",
+    lifespan=lifespan,
+)
 
 
 # ── status / config ──────────────────────────────────────────────────────────
@@ -183,7 +187,7 @@ if __name__ == "__main__":
 
     import uvicorn
 
-    parser = argparse.ArgumentParser(description="Personal Finance Hub")
+    parser = argparse.ArgumentParser(description="Daybook")
     parser.add_argument("--host", default=os.getenv("HOST", "127.0.0.1"))
     parser.add_argument("--port", type=int, default=int(os.getenv("PORT", "8000")))
     parser.add_argument("--reload", action="store_true")
