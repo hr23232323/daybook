@@ -43,7 +43,7 @@ Most contributions can be developed without sending data to any external service
 
 ## Checks
 
-There is not yet a full automated test suite. Before opening a pull request, run:
+Before opening a pull request, run:
 
 ```bash
 make check
@@ -51,6 +51,7 @@ make check
 
 The check target compiles the Python sources, runs the focused unit tests, validates
 the JavaScript when Node is available, and checks the diff for whitespace errors.
+The same checks run in CI on supported Python versions.
 
 Then exercise the affected flow with seeded data. For interface changes, check a wide
 desktop and a narrow mobile viewport, keyboard focus, empty states, and long merchant
