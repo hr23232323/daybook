@@ -46,10 +46,11 @@ Most contributions can be developed without sending data to any external service
 There is not yet a full automated test suite. Before opening a pull request, run:
 
 ```bash
-python -m compileall -q app scripts
-node --check app/web/app.js
-git diff --check
+make check
 ```
+
+The check target compiles the Python sources, validates the JavaScript when Node is
+available, and checks the diff for whitespace errors.
 
 Then exercise the affected flow with seeded data. For interface changes, check a wide
 desktop and a narrow mobile viewport, keyboard focus, empty states, and long merchant

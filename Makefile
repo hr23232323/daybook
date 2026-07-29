@@ -1,14 +1,14 @@
-# Personal Finance Hub — common tasks. Run `make` to see them.
+# Daybook — common tasks. Run `make` to see them.
 .DEFAULT_GOAL := help
 
 VENV := .venv
 PY   := $(VENV)/bin/python
 PIP  := $(VENV)/bin/pip
 
-.PHONY: help setup run dev seed reset-data clean
+.PHONY: help setup run dev seed check reset-data clean
 
 help: ## Show this help
-	@echo "Personal Finance Hub"
+	@echo "Daybook"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
 		| awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-11s\033[0m %s\n", $$1, $$2}'
 
@@ -30,6 +30,16 @@ dev: ## Start with auto-reload (for development)
 
 seed: ## Fill the DB with ~14 months of realistic fake data to explore
 	$(PY) scripts/seed_fake_data.py --reset --months 14
+
+check: ## Run lightweight contributor checks
+	$(PY) -m compileall -q app scripts
+	@if command -v node >/dev/null 2>&1; then \
+		node --check app/web/app.js; \
+	else \
+		echo "Node not found; skipped JavaScript syntax check."; \
+	fi
+	@git diff --check
+	@echo "✓ Checks passed."
 
 reset-data: ## Delete your local database and start fresh
 	rm -f data/finance.db
