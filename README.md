@@ -1,6 +1,17 @@
-# Daybook
+<p align="center">
+  <img src="assets/daybook-mark.svg" width="88" height="88" alt="Daybook">
+</p>
 
-**A private record of your money, run on your machine.**
+<h1 align="center">Daybook</h1>
+
+<p align="center"><strong>A private record of your money, run on your machine.</strong></p>
+
+<p align="center">
+  <a href="https://github.com/hr23232323/daybook/actions/workflows/ci.yml"><img src="https://github.com/hr23232323/daybook/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/hr23232323/daybook/releases/latest"><img src="https://img.shields.io/github/v/release/hr23232323/daybook?display_name=tag&sort=semver" alt="Latest release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-17272c" alt="MIT license"></a>
+  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/python-3.10%2B-c9854d" alt="Python 3.10 or newer"></a>
+</p>
 
 Daybook is an open-source, local-first personal finance ledger. It imports bank
 transactions into SQLite, turns them into an auditable financial statement, finds
@@ -11,6 +22,10 @@ patterns in your history, and can answer questions through an optional LLM.
 - Manual CSV/OFX/QFX import is fully local and works without an API key.
 - The advisor is optional and works with any OpenAI-compatible endpoint, including
   local models.
+
+<p align="center">
+  <img src="docs/daybook-overview.png" alt="Daybook statement view with fictional account data" width="1100">
+</p>
 
 > **Project status:** Daybook is useful today, but still early. It is designed for
 > one person on one machine; expect the data model and APIs to evolve before 1.0.

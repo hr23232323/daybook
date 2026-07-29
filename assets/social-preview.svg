@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-labelledby="title desc">
+  <title id="title">Daybook social preview</title>
+  <desc id="desc">Daybook, a private record of your money, run on your machine.</desc>
+  <rect width="1280" height="640" fill="#efe9de"/>
+  <path d="M0 548h1280v92H0z" fill="#17272c"/>
+  <path d="M90 88h1100v364H90z" fill="#f7f3eb" stroke="#c9bfae" stroke-width="2"/>
+  <g transform="translate(150 150)">
+    <rect width="148" height="148" rx="34" fill="#17272c"/>
+    <path d="M31 38c16-5 30-3 43 6v73c-13-9-27-11-43-6V38Z" fill="#f4efe5"/>
+    <path d="M117 38c-16-5-30-3-43 6v73c13-9 27-11 43-6V38Z" fill="#e9e0d2"/>
+    <path d="M74 44v73" stroke="#b7aa98" stroke-width="3"/>
+    <path d="M42 58h20M42 72h20M42 86h15M86 58h20M86 72h20M86 86h15" stroke="#869296" stroke-width="4" stroke-linecap="round"/>
+    <path d="M94 34v34l8-6 8 6V36c-5-1-11-2-16-2Z" fill="#c9854d"/>
+  </g>
+  <text x="350" y="216" fill="#17272c" font-family="Georgia, 'Times New Roman', serif" font-size="90" font-weight="700">Daybook</text>
+  <text x="354" y="277" fill="#647176" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="30">A private record of your money.</text>
+  <text x="354" y="320" fill="#647176" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="30">Run on your machine.</text>
+  <g fill="#17272c" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="21" font-weight="600" letter-spacing="1">
+    <text x="150" y="404">LOCAL-FIRST</text>
+    <text x="350" y="404">AUDITABLE</text>
+    <text x="520" y="404">OPTIONAL AI</text>
+    <text x="720" y="404">OPEN SOURCE</text>
+  </g>
+  <text x="90" y="597" fill="#f4efe5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="24">SQLite · CSV / OFX / QFX · SimpleFIN · OpenAI-compatible models</text>
+</svg>
