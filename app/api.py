@@ -166,12 +166,17 @@ class ChatIn(BaseModel):
 def chat(body: ChatIn):
     from . import llm  # imported lazily so the app runs even without the openai extra configured
     try:
-        reply = llm.chat(body.message, body.history, thinking=body.thinking)
+        reply, meta = llm.chat(
+            body.message,
+            body.history,
+            thinking=body.thinking,
+            with_meta=True,
+        )
     except RuntimeError as e:
         raise HTTPException(400, str(e))
     except Exception as e:
         raise HTTPException(502, f"LLM error: {e}")
-    return {"reply": reply}
+    return {"reply": reply, "meta": meta}
 
 
 # ── static dashboard (must be mounted last) ──────────────────────────────────

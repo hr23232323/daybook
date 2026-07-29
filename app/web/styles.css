@@ -770,7 +770,7 @@ details > .composer { margin-top: 9px; }
 }
 .chatlog {
   min-height: 350px;
-  max-height: 55vh;
+  max-height: 62vh;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -796,7 +796,116 @@ details > .composer { margin-top: 9px; }
 .msg.bot { align-self: flex-start; background: var(--paper); }
 .msg.user { align-self: flex-end; border-color: var(--navy); background: var(--navy); color: var(--cream); }
 .msg.thinking { color: var(--ink-soft); font-style: italic; }
-.chatlog[aria-busy="true"] .msg.thinking { border-left-color: var(--copper); }
+.msg.error { border-left: 3px solid var(--negative); color: var(--negative); }
+.msg.answer {
+  width: 100%;
+  max-width: 100%;
+  padding: 21px 22px 17px;
+  background: #f8f5ef;
+}
+.answer-body {
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.67;
+}
+.answer-body > :first-child { margin-top: 0; }
+.answer-body > :last-child { margin-bottom: 0; }
+.answer-body h2,
+.answer-body h3,
+.answer-body h4 {
+  margin: 24px 0 8px;
+  color: var(--ink);
+  font-family: var(--serif);
+  line-height: 1.2;
+}
+.answer-body h2 { font-size: 22px; }
+.answer-body h3 { font-size: 18px; }
+.answer-body h4 { font-size: 15px; }
+.answer-body p { margin: 0 0 13px; }
+.answer-body strong { color: var(--navy); font-weight: 700; }
+.answer-body ul,
+.answer-body ol { margin: 8px 0 15px; padding-left: 22px; }
+.answer-body li { margin: 5px 0; padding-left: 3px; }
+.answer-body li::marker { color: var(--copper); font-family: var(--mono); }
+.answer-body hr { margin: 20px 0; border: 0; border-top: 1px solid var(--rule); }
+.answer-body blockquote {
+  margin: 14px 0;
+  padding: 8px 13px;
+  border-left: 3px solid var(--copper);
+  background: var(--paper-deep);
+  color: var(--ink-soft);
+  font-family: var(--serif);
+  font-style: italic;
+}
+.answer-body code {
+  padding: 1px 4px;
+  background: var(--paper-deep);
+  color: var(--navy);
+  font: 11px/1.4 var(--mono);
+}
+.answer-meta {
+  margin-top: 17px;
+  padding-top: 10px;
+  border-top: 1px solid var(--rule-soft);
+  color: var(--ink-faint);
+  font: 8.5px/1.4 var(--mono);
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+.advisor-progress {
+  width: 100%;
+  padding: 16px 17px 14px;
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--copper);
+  background: var(--paper);
+}
+.progress-head {
+  display: grid;
+  grid-template-columns: 9px 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+.progress-pulse {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--copper);
+}
+.progress-head strong {
+  display: block;
+  font: 600 12px/1.3 var(--sans);
+}
+.progress-head div span {
+  display: block;
+  margin-top: 2px;
+  color: var(--ink-faint);
+  font: 8.5px/1.3 var(--mono);
+  text-transform: uppercase;
+}
+.progress-head time { color: var(--ink-soft); font: 10px/1 var(--mono); }
+.progress-track {
+  height: 2px;
+  margin: 13px 0 10px;
+  overflow: hidden;
+  background: var(--paper-deep);
+}
+.progress-track i {
+  display: block;
+  width: 38%;
+  height: 100%;
+  background: var(--copper);
+}
+.advisor-progress p { margin: 0; color: var(--ink-soft); font-size: 10.5px; }
+.chatlog[aria-busy="true"] .progress-pulse { animation: agent-pulse 1.4s ease-in-out infinite; }
+.chatlog[aria-busy="true"] .progress-track i { animation: agent-track 1.7s ease-in-out infinite; }
+@keyframes agent-pulse {
+  0%, 100% { opacity: 0.35; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+@keyframes agent-track {
+  from { transform: translateX(-110%); }
+  to { transform: translateX(285%); }
+}
 .chat-composer {
   padding-top: 14px;
   border-top: 1px solid var(--rule);

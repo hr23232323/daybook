@@ -17,14 +17,16 @@ class AdvisorApiTests(unittest.TestCase):
     def test_chat_forwards_the_selected_thinking_level(self):
         body = api.ChatIn(message="Where did it go?", thinking="high")
 
-        with patch("app.llm.chat", return_value="Grounded answer.") as advisor:
+        meta = {"thinking": "high", "tool_rounds": 2, "tool_calls": 4, "elapsed_ms": 1234}
+        with patch("app.llm.chat", return_value=("Grounded answer.", meta)) as advisor:
             result = api.chat(body)
 
-        self.assertEqual(result, {"reply": "Grounded answer."})
+        self.assertEqual(result, {"reply": "Grounded answer.", "meta": meta})
         advisor.assert_called_once_with(
             "Where did it go?",
             [],
             thinking="high",
+            with_meta=True,
         )
 
     def test_chat_rejects_an_unknown_thinking_level(self):

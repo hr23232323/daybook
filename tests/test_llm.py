@@ -66,8 +66,12 @@ class AdvisorLoopTests(unittest.TestCase):
 
         self.assertEqual(answer, "Here is the answer from the gathered records.")
         self.assertEqual(len(calls), 4)
-        self.assertTrue(all(call["reasoning_effort"] == "high" for call in calls))
+        self.assertTrue(all(call["reasoning_effort"] == "low" for call in calls[:3]))
+        self.assertEqual(calls[-1]["reasoning_effort"], "high")
         self.assertTrue(all("tools" in call for call in calls[:3]))
+        self.assertTrue(all(call["parallel_tool_calls"] for call in calls[:3]))
+        self.assertTrue(all(call["max_completion_tokens"] == 2500 for call in calls[:3]))
+        self.assertEqual(calls[-1]["max_completion_tokens"], 10000)
         self.assertNotIn("tools", calls[-1])
         self.assertIn("Research is complete", calls[-1]["messages"][-1]["content"])
 
@@ -99,6 +103,26 @@ class AdvisorLoopTests(unittest.TestCase):
 
         self.assertEqual(answer, "Done.")
         self.assertNotIn("reasoning_effort", calls[0])
+        self.assertNotIn("reasoning_effort", calls[-1])
+
+    def test_returns_non_sensitive_timing_and_tool_metadata(self):
+        def responder(request, call_number):
+            if call_number == 1:
+                return _response(tool_calls=[_tool_call()])
+            return _response(content="Grounded answer.")
+
+        result, _calls = self._run(
+            responder,
+            thinking="medium",
+            with_meta=True,
+        )
+        answer, meta = result
+
+        self.assertEqual(answer, "Grounded answer.")
+        self.assertEqual(meta["thinking"], "medium")
+        self.assertEqual(meta["tool_rounds"], 1)
+        self.assertEqual(meta["tool_calls"], 1)
+        self.assertGreaterEqual(meta["elapsed_ms"], 0)
 
     def test_rejects_an_unknown_thinking_level(self):
         with (

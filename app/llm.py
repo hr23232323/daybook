@@ -8,6 +8,7 @@ chooses to run are sent to the endpoint. There is no tool that can write data.
 """
 import datetime
 import json
+import time
 
 from openai import OpenAI
 
@@ -150,7 +151,7 @@ def _reasoning_context(msg) -> dict:
 
 
 def chat(message: str, history: list | None = None, thinking: str = "medium",
-         max_tool_rounds: int = 10) -> str:
+         max_tool_rounds: int = 10, with_meta: bool = False):
     if not config.llm_configured():
         raise RuntimeError(
             "No LLM key set. Add LLM_API_KEY to your .env (OpenRouter by default) "
@@ -164,35 +165,43 @@ def chat(message: str, history: list | None = None, thinking: str = "medium",
     messages += history or []
     messages.append({"role": "user", "content": message})
 
-    reasoning_kwargs = {} if thinking == "auto" else {"reasoning_effort": thinking}
+    started = time.monotonic()
+    tool_rounds = 0
+    tool_call_count = 0
 
-    for round_index in range(max_tool_rounds + 1):
-        force_answer = round_index == max_tool_rounds
-        request_messages = messages
-        kwargs = {
-            "model": config.LLM_MODEL,
-            "messages": request_messages,
-            "max_completion_tokens": 10000,
-            **reasoning_kwargs,
+    def finish(text: str):
+        if not with_meta:
+            return text
+        return text, {
+            "thinking": thinking,
+            "tool_rounds": tool_rounds,
+            "tool_calls": tool_call_count,
+            "elapsed_ms": round((time.monotonic() - started) * 1000),
         }
-        if force_answer:
-            request_messages = [
-                *messages,
-                {
-                    "role": "system",
-                    "content": (
-                        "Research is complete. Answer the user's original question now "
-                        "using the tool results above. Do not call another tool, mention "
-                        "the research limit, or ask them to narrow the question unless "
-                        "the available data genuinely cannot answer it."
-                    ),
-                },
-            ]
-            kwargs["messages"] = request_messages
-        else:
-            kwargs.update({"tools": TOOLS, "tool_choice": "auto"})
 
-        resp = client.chat.completions.create(**kwargs)
+    research_instruction = {
+        "role": "system",
+        "content": (
+            "You are in the research phase. Do not answer the user yet. Call every "
+            "read-only tool you still need, grouping independent calls in parallel. "
+            "If the existing results are sufficient, respond only RESEARCH_COMPLETE."
+        ),
+    }
+
+    for _ in range(max_tool_rounds):
+        research_kwargs = {
+            "model": config.LLM_MODEL,
+            "messages": [*messages, research_instruction],
+            # Tool routing is deliberately cheap; the user's selected effort is
+            # reserved for the synthesis where deeper reasoning adds real value.
+            "max_completion_tokens": 2500,
+            "tools": TOOLS,
+            "tool_choice": "auto",
+            "parallel_tool_calls": True,
+        }
+        if thinking != "auto":
+            research_kwargs["reasoning_effort"] = "low"
+        resp = client.chat.completions.create(**research_kwargs)
         msg = resp.choices[0].message
 
         assistant = {"role": "assistant", "content": msg.content or ""}
@@ -205,9 +214,11 @@ def chat(message: str, history: list | None = None, thinking: str = "medium",
             ]
         messages.append(assistant)
 
-        if force_answer or not msg.tool_calls:
-            return msg.content or ""
+        if not msg.tool_calls:
+            break
 
+        tool_rounds += 1
+        tool_call_count += len(msg.tool_calls)
         for tc in msg.tool_calls:
             fn = TOOL_FUNCS.get(tc.function.name)
             try:
@@ -218,5 +229,24 @@ def chat(message: str, history: list | None = None, thinking: str = "medium",
             messages.append({"role": "tool", "tool_call_id": tc.id,
                              "content": json.dumps(result, default=str)})
 
-    # The synthesis-only final request above makes this unreachable in normal use.
-    return "I gathered the records but couldn't produce an answer."
+    synthesis_messages = [
+        *messages,
+        {
+            "role": "system",
+            "content": (
+                "Research is complete. Answer the user's original question now using "
+                "the tool results above. Do not mention the research process or ask "
+                "them to narrow the question unless the available data genuinely "
+                "cannot answer it. Use clear Markdown with short sections and lists."
+            ),
+        },
+    ]
+    synthesis_kwargs = {
+        "model": config.LLM_MODEL,
+        "messages": synthesis_messages,
+        "max_completion_tokens": 10000,
+    }
+    if thinking != "auto":
+        synthesis_kwargs["reasoning_effort"] = thinking
+    final = client.chat.completions.create(**synthesis_kwargs)
+    return finish(final.choices[0].message.content or "")

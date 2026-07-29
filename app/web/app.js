@@ -201,6 +201,88 @@ const esc = (s) => String(s).replace(
   (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
 );
 
+function inlineMarkdown(text) {
+  return esc(text)
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/__([^_]+)__/g, "<strong>$1</strong>")
+    .replace(/\*([^*\n]+)\*/g, "<em>$1</em>");
+}
+
+function renderMarkdown(text) {
+  const lines = String(text).trim().split(/\r?\n/);
+  const output = [];
+  let paragraph = [];
+  let listType = null;
+
+  const flushParagraph = () => {
+    if (!paragraph.length) return;
+    output.push(`<p>${inlineMarkdown(paragraph.join(" "))}</p>`);
+    paragraph = [];
+  };
+  const closeList = () => {
+    if (!listType) return;
+    output.push(`</${listType}>`);
+    listType = null;
+  };
+  const openList = (type) => {
+    flushParagraph();
+    if (listType === type) return;
+    closeList();
+    listType = type;
+    output.push(`<${type}>`);
+  };
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) {
+      flushParagraph();
+      closeList();
+      continue;
+    }
+
+    const heading = line.match(/^(#{2,4})\s+(.+)$/);
+    if (heading) {
+      flushParagraph();
+      closeList();
+      const level = heading[1].length;
+      output.push(`<h${level}>${inlineMarkdown(heading[2])}</h${level}>`);
+      continue;
+    }
+    if (/^[-*_]{3,}$/.test(line)) {
+      flushParagraph();
+      closeList();
+      output.push("<hr>");
+      continue;
+    }
+    const unordered = line.match(/^[-*]\s+(.+)$/);
+    if (unordered) {
+      openList("ul");
+      output.push(`<li>${inlineMarkdown(unordered[1])}</li>`);
+      continue;
+    }
+    const ordered = line.match(/^\d+[.)]\s+(.+)$/);
+    if (ordered) {
+      openList("ol");
+      output.push(`<li>${inlineMarkdown(ordered[1])}</li>`);
+      continue;
+    }
+    const quote = line.match(/^>\s?(.+)$/);
+    if (quote) {
+      flushParagraph();
+      closeList();
+      output.push(`<blockquote>${inlineMarkdown(quote[1])}</blockquote>`);
+      continue;
+    }
+
+    closeList();
+    paragraph.push(line);
+  }
+  flushParagraph();
+  closeList();
+  return output.join("");
+}
+
 const COACH_SKELETON = `<div class="coachcards">${[0, 1, 2].map(() => `
   <article class="ci ci-skel">
     <div class="ci-top"><span class="skel skel-kind"></span><span class="skel skel-metric"></span></div>
@@ -573,6 +655,60 @@ function addMsg(text, who) {
   $("#chatlog").scrollTop = $("#chatlog").scrollHeight;
   return el;
 }
+
+function addAdvisorProgress(effort) {
+  const el = document.createElement("div");
+  el.className = "advisor-progress";
+  el.setAttribute("role", "status");
+  el.innerHTML = `
+    <div class="progress-head">
+      <span class="progress-pulse" aria-hidden="true"></span>
+      <div>
+        <strong>Reviewing your ledger</strong>
+        <span>${THINKING_LEVELS[effort].label} thinking · read-only access</span>
+      </div>
+      <time>0s</time>
+    </div>
+    <div class="progress-track" aria-hidden="true"><i></i></div>
+    <p>Broad questions can take several model passes while Daybook compares the evidence.</p>`;
+  $("#chatlog").appendChild(el);
+  $("#chatlog").scrollTop = $("#chatlog").scrollHeight;
+
+  const started = performance.now();
+  const timer = setInterval(() => {
+    const seconds = Math.floor((performance.now() - started) / 1000);
+    el.querySelector("time").textContent = `${seconds}s`;
+  }, 500);
+
+  return {
+    el,
+    stop() { clearInterval(timer); },
+  };
+}
+
+function addAdvisorAnswer(text, meta) {
+  const el = document.createElement("div");
+  el.className = "msg bot answer";
+  el.innerHTML = `
+    <span class="msg-byline">Daybook advisor</span>
+    <div class="answer-body">${renderMarkdown(text)}</div>`;
+  if (meta) {
+    const seconds = Math.max(0, meta.elapsed_ms || 0) / 1000;
+    const queryLabel = `${meta.tool_calls} quer${meta.tool_calls === 1 ? "y" : "ies"}`;
+    const passLabel = `${meta.tool_rounds} research pass${meta.tool_rounds === 1 ? "" : "es"}`;
+    const detail = document.createElement("div");
+    detail.className = "answer-meta";
+    detail.textContent =
+      `${THINKING_LEVELS[meta.thinking]?.label || "Auto"} · ${queryLabel} · ${passLabel} · ${seconds.toFixed(1)}s`;
+    el.appendChild(detail);
+  }
+  const log = $("#chatlog");
+  log.appendChild(el);
+  // Long answers should open at their beginning, not strand the reader at the end.
+  log.scrollTop += el.getBoundingClientRect().top - log.getBoundingClientRect().top - 6;
+  return el;
+}
+
 async function sendChat() {
   const text = $("#chatInput").value.trim();
   if (!text || chatBusy) return;
@@ -586,17 +722,20 @@ async function sendChat() {
   $("#chatlog").setAttribute("aria-busy", "true");
   $("#chatInput").value = "";
   addMsg(text, "user");
-  const thinking = addMsg(`Reviewing your ledger · ${THINKING_LEVELS[effort].label.toLowerCase()}…`, "bot thinking");
+  const progress = addAdvisorProgress(effort);
   try {
     const r = await api("/api/chat", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message: text, history: chatHistory, thinking: effort }),
     });
-    thinking.remove();
-    addMsg(r.reply, "bot");
+    progress.stop();
+    progress.el.remove();
+    addAdvisorAnswer(r.reply, r.meta);
     chatHistory.push({ role: "user", content: text }, { role: "assistant", content: r.reply });
   } catch (e) {
-    thinking.className = "msg bot"; thinking.textContent = "⚠ " + e.message;
+    progress.stop();
+    progress.el.className = "msg bot error";
+    progress.el.textContent = "⚠ " + e.message;
   } finally {
     chatBusy = false;
     sendButton.disabled = false;
