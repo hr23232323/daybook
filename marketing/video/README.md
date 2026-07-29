@@ -1,10 +1,60 @@
-# Daybook launch video
+# Daybook launch films
 
-The 15-second launch film is built from real Daybook screens populated only with the
-repository's deterministic fictional-data generator. It is designed for X playback:
-1280×720, 30 fps, H.264 video, AAC audio, and complete comprehension with sound off.
+All launch films are built from real Daybook screens populated only with the
+repository's deterministic fictional-data generator. Keep the earlier cuts for
+comparison; v3 is the recommended social upload.
 
-## Render
+## V3 — organic share cut
+
+`output/daybook-launch-v3-organic-square.mp4` is the recommended X upload. It is a
+15-second, full-bleed product recording with a smooth cursor and a deliberately steady
+camera. The frame pans only to expose a navigation click and zooms only to make a
+specific result easier to read. There is no ad frame, headline layer, or end card.
+
+```bash
+cd marketing/video/v2
+npm install
+npm run render:organic
+npm run cover:organic
+```
+
+It writes:
+
+- `output/daybook-launch-v3-organic-square.mp4` — recommended X video
+- `output/daybook-launch-v3-organic-cover.png` — optional thumbnail
+
+## V2 — designed product trailer
+
+`output/daybook-launch-v2-square.mp4` is the more designed cut. It is 15 seconds,
+1080×1080, 30 fps, H.264/AAC, under 10 MB, and understandable with sound off. It adds
+cursor choreography, click feedback, camera-follow zooms, depth, spring motion, and an
+original ambient sound design.
+
+Requirements: Node.js, npm, Python 3, and `ffmpeg`.
+
+```bash
+cd marketing/video/v2
+npm install
+npm run render
+```
+
+Useful development commands:
+
+```bash
+npm run studio
+npm run cover
+```
+
+The renderer stages repository assets into the gitignored `v2/public/` directory,
+renders a high-quality intermediate, normalizes audio for social playback, and
+preserves the H.264 picture while creating the final upload.
+
+It writes:
+
+- `output/daybook-launch-v2-square.mp4` — recommended mobile-first X video
+- `output/daybook-launch-v2-cover.png` — optional v2 thumbnail
+
+## V1 — widescreen launch film
 
 Install Daybook first, then run:
 

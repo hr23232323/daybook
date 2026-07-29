@@ -1,0 +1,20 @@
+{
+  "name": "daybook-launch-film-v2",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "prepare": "python3 prepare_assets.py && python3 make_audio.py",
+    "audio": "python3 make_audio.py",
+    "studio": "npm run prepare && remotion studio src/index.tsx --public-dir public",
+    "render": "./render_video.sh DaybookSquare daybook-launch-v2-square.mp4",
+    "render:organic": "./render_video.sh DaybookOrganic daybook-launch-v3-organic-square.mp4",
+    "cover": "npm run prepare && remotion still src/index.tsx DaybookSquare ../output/daybook-launch-v2-cover.png --public-dir public --frame 24",
+    "cover:organic": "npm run prepare && remotion still src/index.tsx DaybookOrganic ../output/daybook-launch-v3-organic-cover.png --public-dir public --frame 20"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.500",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "remotion": "4.0.500"
+  }
+}
