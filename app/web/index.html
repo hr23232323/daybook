@@ -3,187 +3,296 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Personal Finance Hub</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='9' y='9' width='14' height='14' transform='rotate(45 16 16)' fill='%231E5C40'/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="/styles.css" />
+  <meta name="theme-color" content="#17372f" />
+  <meta name="description" content="Daybook is a private, local-first record of your money." />
+  <title>Daybook — private money ledger</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%2317372f'/%3E%3Cpath d='M8 8.5h7.2c2.9 0 5.3 2.4 5.3 5.3v9.7h-7.2A5.3 5.3 0 0 1 8 18.2V8.5Z' fill='none' stroke='%23f4f0e7' stroke-width='2'/%3E%3Cpath d='M12 12.5h4.5M12 16h4.5' stroke='%23d6a748' stroke-width='1.5'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/styles.css?v=daybook-2" />
 </head>
 <body>
-  <header class="masthead">
-    <div class="brand">
-      <span class="mark" aria-hidden="true"></span>
-      <div>
-        <h1 class="wordmark">Personal Finance Hub</h1>
-        <p class="dateline">Local-first — your data never leaves this machine</p>
+  <a class="skip-link" href="#content">Skip to content</a>
+
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="/" aria-label="Daybook home">
+        <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true">
+          <path d="M8.5 8.5h9c4.4 0 8 3.6 8 8v15h-9c-4.4 0-8-3.6-8-8v-15Z"></path>
+          <path d="M14 15h6.5M14 20h6.5"></path>
+        </svg>
+        <span class="brand-copy">
+          <span class="wordmark">Daybook</span>
+          <span class="brand-tagline">Private money ledger</span>
+        </span>
+      </a>
+
+      <nav class="tabs" aria-label="Daybook sections" role="tablist">
+        <button class="tab active" data-tab="dashboard" role="tab" aria-selected="true" aria-controls="tab-dashboard">
+          <span class="tab-index">01</span><span>Statement</span>
+        </button>
+        <button class="tab" data-tab="insights" role="tab" aria-selected="false" aria-controls="tab-insights">
+          <span class="tab-index">02</span><span>Discoveries</span>
+        </button>
+        <button class="tab" data-tab="transactions" role="tab" aria-selected="false" aria-controls="tab-transactions">
+          <span class="tab-index">03</span><span>Ledger</span>
+        </button>
+        <button class="tab" data-tab="ask" role="tab" aria-selected="false" aria-controls="tab-ask">
+          <span class="tab-index">04</span><span>Advisor</span>
+        </button>
+        <button class="tab" data-tab="connect" role="tab" aria-selected="false" aria-controls="tab-connect">
+          <span class="tab-index">05</span><span>Import &amp; sync</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-foot">
+        <p class="local-note"><span class="privacy-light"></span>Runs on this machine</p>
+        <div id="status" class="status" aria-live="polite">Checking services…</div>
+        <a class="source-link" href="https://github.com/hr23232323/personal-finance-hub" target="_blank" rel="noopener">
+          Open source · MIT
+          <span aria-hidden="true">↗</span>
+        </a>
       </div>
-    </div>
-    <div id="status" class="status"></div>
-  </header>
+    </aside>
 
-  <nav class="tabs" aria-label="Sections">
-    <button class="tab active" data-tab="dashboard">Statement</button>
-    <button class="tab" data-tab="insights">Discoveries</button>
-    <button class="tab" data-tab="transactions">Ledger</button>
-    <button class="tab" data-tab="ask">Advisor</button>
-    <button class="tab" data-tab="connect">Import &amp; sync</button>
-  </nav>
-
-  <main>
-    <div class="periodbar" id="periodbar">
-      <label for="range">Period</label>
-      <select id="range">
-        <option value="30">Last 30 days</option>
-        <option value="90" selected>Last 90 days</option>
-        <option value="365">Last 12 months</option>
-        <option value="0">All time</option>
-      </select>
-    </div>
-
-    <!-- STATEMENT -->
-    <section id="tab-dashboard" class="panel">
-      <div id="summary" class="summary"></div>
-
-      <div class="grid2">
-        <section class="block">
-          <p class="eyebrow">Where it went</p>
-          <h3>Spending by category</h3>
-          <div id="chartCategory" class="chartbox"></div>
-        </section>
-        <section class="block">
-          <p class="eyebrow">Follow the money</p>
-          <h3>Income, and where it flowed</h3>
-          <div id="chartFlow" class="chartbox"></div>
-        </section>
-      </div>
-
-      <section class="block">
-        <p class="eyebrow">Daily rhythm</p>
-        <h3>Spending calendar</h3>
-        <div class="heatmap-wrap"><div id="chartHeatmap"></div></div>
-      </section>
-
-      <section class="block">
-        <p class="eyebrow">Who got paid</p>
-        <h3>Top merchants</h3>
-        <div id="topMerchants" class="bars"></div>
-      </section>
-    </section>
-
-    <!-- DISCOVERIES -->
-    <section id="tab-insights" class="panel hidden">
-      <section class="block">
-        <p class="eyebrow">Coach's read</p>
-        <div id="coach" class="coach loading">Reading your numbers…</div>
-      </section>
-
-      <section class="block">
-        <p class="eyebrow">What's worth noticing</p>
-        <h3>Discoveries</h3>
-        <p class="muted">Patterns and changes we found in your history — click any to see the transactions behind it.</p>
-        <div id="discoveries" class="discfeed"></div>
-      </section>
-
-      <section class="block">
-        <p class="eyebrow">Trends</p>
-        <h3>Spending by category, over time</h3>
-        <div id="chartTrend" class="chartbox tall"></div>
-      </section>
-
-      <section class="block">
-        <div class="ledger-head">
-          <h3>Recurring &amp; subscriptions</h3>
-          <span class="rec-total" id="recurringTotal"></span>
+    <div class="workspace">
+      <header class="topbar">
+        <div>
+          <p class="topbar-kicker">Your financial record</p>
+          <h1 id="pageTitle">Statement</h1>
         </div>
-        <p class="muted">Everything that bills you on a regular cadence, largest first.</p>
-        <div id="recurring" class="reclist"></div>
-      </section>
-    </section>
-
-    <!-- LEDGER -->
-    <section id="tab-transactions" class="panel hidden">
-      <section class="block">
-        <div class="ledger-head">
-          <h3>Ledger</h3>
-          <input id="txSearch" placeholder="Search payee or memo" />
+        <div class="periodbar" id="periodbar">
+          <label for="range">Reporting period</label>
+          <select id="range">
+            <option value="30">Last 30 days</option>
+            <option value="90" selected>Last 90 days</option>
+            <option value="365">Last 12 months</option>
+            <option value="0">All time</option>
+          </select>
         </div>
-        <table class="txtable">
-          <thead><tr><th>Date</th><th>Payee</th><th>Category</th><th>Account</th><th class="r">Amount</th></tr></thead>
-          <tbody id="txbody"></tbody>
-        </table>
-      </section>
-    </section>
+      </header>
 
-    <!-- ADVISOR -->
-    <section id="tab-ask" class="panel hidden">
-      <section class="block chat">
-        <p class="eyebrow">Your advisor</p>
-        <div id="chatlog" class="chatlog">
-          <div class="msg bot">I can see your transactions. Ask me things like <em>“Where did most of my money go last month?”</em>, <em>“Which subscriptions am I still paying for?”</em>, or <em>“What’s a purchase worth rethinking?”</em></div>
-        </div>
-        <div class="composer">
-          <input id="chatInput" placeholder="Ask about your money…" />
-          <button id="chatSend" class="primary">Ask</button>
-        </div>
-        <p class="fineprint" id="chatPrivacy"></p>
-      </section>
-    </section>
+      <main id="content">
+        <!-- STATEMENT -->
+        <section id="tab-dashboard" class="panel" role="tabpanel" aria-labelledby="pageTitle">
+          <div id="summary" class="summary"></div>
 
-    <!-- IMPORT & SYNC -->
-    <section id="tab-connect" class="panel hidden">
-      <div class="grid2">
-        <section class="block">
-          <p class="eyebrow"><span class="tick green"></span>Fully local</p>
-          <h3>Import a file</h3>
-          <p class="muted">Download a CSV, OFX, or QFX from your bank and drop it in. Nothing leaves this machine.</p>
+          <div class="grid2">
+            <section class="block chart-block">
+              <div class="block-head">
+                <div>
+                  <p class="eyebrow">Outflow / category</p>
+                  <h2>Where it went</h2>
+                </div>
+                <span class="section-no">A</span>
+              </div>
+              <div id="chartCategory" class="chartbox"></div>
+            </section>
 
-          <label class="field-label">Account</label>
-          <select id="importAccount"></select>
+            <section class="block chart-block">
+              <div class="block-head">
+                <div>
+                  <p class="eyebrow">Income / allocation</p>
+                  <h2>Follow the money</h2>
+                </div>
+                <span class="section-no">B</span>
+              </div>
+              <div id="chartFlow" class="chartbox"></div>
+            </section>
+          </div>
 
-          <details>
-            <summary>New account</summary>
-            <input id="newAcctName" placeholder="e.g. Chase Checking" />
-            <div class="composer">
-              <select id="newAcctType">
-                <option value="checking">Checking</option>
-                <option value="savings">Savings</option>
-                <option value="credit">Credit card</option>
-                <option value="loan">Loan</option>
-                <option value="investment">Investment</option>
-                <option value="other">Other</option>
-              </select>
-              <button id="createAcct">Create</button>
+          <section class="block">
+            <div class="block-head">
+              <div>
+                <p class="eyebrow">Outflow / day</p>
+                <h2>Spending rhythm</h2>
+              </div>
+              <span class="section-no">C</span>
             </div>
-          </details>
+            <div class="heatmap-wrap"><div id="chartHeatmap"></div></div>
+          </section>
 
-          <label class="field-label">File</label>
-          <div class="composer">
-            <input type="file" id="importFile" accept=".csv,.ofx,.qfx,.txt" />
-            <button id="importBtn" class="primary">Import</button>
-          </div>
-          <div id="importResult" class="result"></div>
+          <section class="block">
+            <div class="block-head">
+              <div>
+                <p class="eyebrow">Outflow / merchant</p>
+                <h2>Who got paid</h2>
+              </div>
+              <span class="section-no">D</span>
+            </div>
+            <div id="topMerchants" class="bars"></div>
+          </section>
         </section>
 
-        <section class="block">
-          <p class="eyebrow"><span class="tick gold"></span>Via aggregator</p>
-          <h3>SimpleFIN sync</h3>
-          <p class="muted">Auto-pull from your bank. Get a one-time setup token at
-            <a href="https://beta-bridge.simplefin.org" target="_blank" rel="noopener">beta-bridge.simplefin.org</a>.
-            Your data is retrieved on SimpleFIN’s servers, then copied here — convenient, not maximally private.</p>
+        <!-- DISCOVERIES -->
+        <section id="tab-insights" class="panel hidden" role="tabpanel" aria-labelledby="pageTitle">
+          <section class="block coach-block">
+            <div class="block-head">
+              <div>
+                <p class="eyebrow">Optional model analysis</p>
+                <h2>Coach’s read</h2>
+              </div>
+              <span class="section-no">01</span>
+            </div>
+            <div id="coach" class="coach loading">Reading your numbers…</div>
+          </section>
 
-          <div id="sfStatus" class="sfstatus"></div>
+          <section class="block">
+            <div class="block-head">
+              <div>
+                <p class="eyebrow">Computed locally</p>
+                <h2>Worth noticing</h2>
+                <p class="section-intro">Patterns ranked against your own history. Open one to audit the transactions behind it.</p>
+              </div>
+              <span class="section-no">02</span>
+            </div>
+            <div id="discoveries" class="discfeed"></div>
+          </section>
 
-          <label class="field-label">Setup token</label>
-          <div class="composer">
-            <input id="sfToken" placeholder="Paste your SimpleFIN setup token" />
-            <button id="sfConnect">Connect</button>
-          </div>
-          <button id="sfSync" class="primary wide">Sync now</button>
-          <div id="sfResult" class="result"></div>
+          <section class="block">
+            <div class="block-head">
+              <div>
+                <p class="eyebrow">Outflow / month</p>
+                <h2>Category movement</h2>
+              </div>
+              <span class="section-no">03</span>
+            </div>
+            <div id="chartTrend" class="chartbox tall"></div>
+          </section>
+
+          <section class="block">
+            <div class="block-head">
+              <div>
+                <p class="eyebrow">Detected cadence</p>
+                <h2>Recurring charges</h2>
+                <p class="section-intro">Regular charges, largest first. Inactive items stay visible for context.</p>
+              </div>
+              <div class="block-meta">
+                <span class="rec-total" id="recurringTotal"></span>
+                <span class="section-no">04</span>
+              </div>
+            </div>
+            <div id="recurring" class="reclist"></div>
+          </section>
         </section>
-      </div>
-    </section>
-  </main>
+
+        <!-- LEDGER -->
+        <section id="tab-transactions" class="panel hidden" role="tabpanel" aria-labelledby="pageTitle">
+          <section class="block ledger-block">
+            <div class="block-head ledger-head">
+              <div>
+                <p class="eyebrow">Every recorded movement</p>
+                <h2>Transaction ledger</h2>
+              </div>
+              <div class="search-wrap">
+                <label class="sr-only" for="txSearch">Search transactions</label>
+                <input id="txSearch" type="search" placeholder="Search payee or memo" autocomplete="off" />
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="txtable">
+                <thead><tr><th>Date</th><th>Payee</th><th>Category</th><th>Account</th><th class="r">Amount</th></tr></thead>
+                <tbody id="txbody"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <!-- ADVISOR -->
+        <section id="tab-ask" class="panel hidden" role="tabpanel" aria-labelledby="pageTitle">
+          <section class="block chat">
+            <div class="block-head">
+              <div>
+                <p class="eyebrow">Read-only access</p>
+                <h2>Ask your ledger</h2>
+                <p class="section-intro">The advisor can inspect your records, but it cannot change them.</p>
+              </div>
+              <span class="section-no">AI</span>
+            </div>
+            <div id="chatlog" class="chatlog" aria-live="polite">
+              <div class="msg bot">
+                <span class="msg-byline">Daybook advisor</span>
+                Ask a specific question about your money. For example: <em>“What changed most last month?”</em> or <em>“Which recurring charges look inactive?”</em>
+              </div>
+            </div>
+            <div class="composer chat-composer">
+              <label class="sr-only" for="chatInput">Ask about your money</label>
+              <input id="chatInput" placeholder="Ask about your money…" autocomplete="off" />
+              <button id="chatSend" class="primary">Send</button>
+            </div>
+            <p class="fineprint" id="chatPrivacy"></p>
+          </section>
+        </section>
+
+        <!-- IMPORT & SYNC -->
+        <section id="tab-connect" class="panel hidden" role="tabpanel" aria-labelledby="pageTitle">
+          <div class="connect-intro">
+            <p class="eyebrow">Choose your data path</p>
+            <h2>Bring your records home</h2>
+            <p>Manual files stay entirely local. SimpleFIN trades some privacy for automatic syncing. Daybook makes that line explicit.</p>
+          </div>
+
+          <div class="grid2 connect-grid">
+            <section class="block connect-card local-card">
+              <div class="method-label"><span class="privacy-light"></span>Fully local</div>
+              <h2>Import a statement</h2>
+              <p class="section-intro">Download CSV, OFX, or QFX from your bank. The file is read here and never uploaded.</p>
+
+              <label class="field-label" for="importAccount">Account</label>
+              <select id="importAccount"></select>
+
+              <details>
+                <summary>Create a new account</summary>
+                <label class="sr-only" for="newAcctName">New account name</label>
+                <input id="newAcctName" placeholder="e.g. Chase checking" />
+                <div class="composer">
+                  <label class="sr-only" for="newAcctType">Account type</label>
+                  <select id="newAcctType">
+                    <option value="checking">Checking</option>
+                    <option value="savings">Savings</option>
+                    <option value="credit">Credit card</option>
+                    <option value="loan">Loan</option>
+                    <option value="investment">Investment</option>
+                    <option value="other">Other</option>
+                  </select>
+                  <button id="createAcct">Create</button>
+                </div>
+              </details>
+
+              <label class="field-label" for="importFile">Statement file</label>
+              <input type="file" id="importFile" accept=".csv,.ofx,.qfx,.txt" />
+              <button id="importBtn" class="primary wide">Import statement</button>
+              <div id="importResult" class="result" aria-live="polite"></div>
+            </section>
+
+            <section class="block connect-card sync-card">
+              <div class="method-label caution"><span class="privacy-light"></span>Third-party sync</div>
+              <h2>Connect SimpleFIN</h2>
+              <p class="section-intro">SimpleFIN retrieves data from your bank and copies it here. It is convenient, but not fully local.</p>
+              <p class="learn-link"><a href="https://beta-bridge.simplefin.org" target="_blank" rel="noopener">Get a setup token from SimpleFIN ↗</a></p>
+
+              <form class="sync-form">
+                <div id="sfStatus" class="sfstatus"></div>
+
+                <label class="field-label" for="sfToken">One-time setup token</label>
+                <div class="composer">
+                  <input id="sfToken" type="password" placeholder="Paste setup token" autocomplete="off" />
+                  <button id="sfConnect" type="button">Connect</button>
+                </div>
+                <button id="sfSync" type="button" class="primary wide">Sync now</button>
+                <div id="sfResult" class="result" aria-live="polite"></div>
+              </form>
+            </section>
+          </div>
+        </section>
+      </main>
+
+      <footer class="app-footer">
+        <span>Daybook keeps the source of every number within reach.</span>
+        <span>Local-first · No hosted account · SQLite</span>
+      </footer>
+    </div>
+  </div>
 
   <script src="/vendor/echarts.min.js"></script>
-  <script src="/app.js"></script>
+  <script src="/app.js?v=daybook-2"></script>
 </body>
 </html>

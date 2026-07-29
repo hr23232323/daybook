@@ -1,4 +1,4 @@
-// Tiny vanilla dashboard. No frameworks, no CDN — fully local.
+// Daybook's tiny vanilla client. No framework, build step, CDN, or remote assets.
 const $ = (s) => document.querySelector(s);
 const money = (n) => (n < 0 ? "-" : "") + "$" + Math.abs(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const api = async (path, opts) => {
@@ -7,13 +7,13 @@ const api = async (path, opts) => {
   return r.json();
 };
 
-// ── charts (ECharts, themed to the Statement look) ──────────────────────────
+// ── charts (ECharts, themed to the Daybook ledger) ──────────────────────────
 const CHART = {
-  ink: "#1C1E1A", inkSoft: "#5C6056", green: "#1E5C40", oxblood: "#9E3B2A",
-  rule: "#D4D5C9", paper: "#ECEDE6", surface: "#FBFAF5",
-  sans: 'system-ui, -apple-system, sans-serif',
+  ink: "#18201e", inkSoft: "#66706c", green: "#214a3f", oxblood: "#a94130",
+  rule: "#cfc9bd", paper: "#f7f4ed", surface: "#f7f4ed",
+  sans: '"Avenir Next", Avenir, "Segoe UI", sans-serif',
   mono: 'ui-monospace, "SF Mono", Menlo, monospace',
-  palette: ["#1E5C40", "#9E3B2A", "#A9781F", "#3E6B8B", "#6B4E7A", "#7A6A4F", "#4C7A5B", "#9a9c90"],
+  palette: ["#214a3f", "#a94130", "#a8751e", "#41677a", "#70566f", "#79684f", "#58816c", "#94938b"],
 };
 const charts = {};
 function chart(id) {
@@ -26,15 +26,27 @@ window.addEventListener("resize", () => {
 });
 
 function renderDonut(cats) {
+  const total = cats.reduce((sum, item) => sum + item.spent, 0);
   chart("chartCategory").setOption({
     color: CHART.palette,
     tooltip: { trigger: "item", formatter: (p) => `${p.name}<br>${money(-p.value)} · ${p.percent}%` },
-    legend: { type: "scroll", bottom: 0, textStyle: { color: CHART.inkSoft, fontFamily: CHART.sans } },
+    title: {
+      text: money(-total),
+      subtext: "TOTAL OUTFLOW",
+      left: "center",
+      top: "31%",
+      textStyle: { color: CHART.ink, fontFamily: CHART.mono, fontSize: 17, fontWeight: 500 },
+      subtextStyle: { color: CHART.inkSoft, fontFamily: CHART.sans, fontSize: 8, letterSpacing: 1.2 },
+    },
+    legend: {
+      type: "scroll", bottom: 0, icon: "rect", itemWidth: 8, itemHeight: 8, itemGap: 12,
+      textStyle: { color: CHART.inkSoft, fontFamily: CHART.sans, fontSize: 10 },
+    },
     series: [{
-      type: "pie", radius: ["52%", "78%"], center: ["50%", "43%"],
+      type: "pie", radius: ["57%", "79%"], center: ["50%", "41%"],
       data: cats.map((c) => ({ name: c.category, value: c.spent })),
       label: { show: false }, labelLine: { show: false },
-      itemStyle: { borderColor: CHART.surface, borderWidth: 2 },
+      itemStyle: { borderColor: CHART.surface, borderWidth: 1 },
     }],
   }, true);
 }
@@ -49,10 +61,10 @@ function renderSankey(flow) {
     },
     series: [{
       type: "sankey", data: flow.nodes, links: flow.links,
-      emphasis: { focus: "adjacency" }, nodeGap: 9, nodeWidth: 11,
-      itemStyle: { color: CHART.green, borderColor: CHART.surface },
-      lineStyle: { color: "gradient", opacity: 0.38, curveness: 0.5 },
-      label: { color: CHART.ink, fontFamily: CHART.sans, fontSize: 11 },
+      emphasis: { focus: "adjacency" }, nodeGap: 8, nodeWidth: 8,
+      itemStyle: { color: CHART.green, borderWidth: 0 },
+      lineStyle: { color: "gradient", opacity: 0.28, curveness: 0.45 },
+      label: { color: CHART.ink, fontFamily: CHART.sans, fontSize: 9.5 },
     }],
   }, true);
 }
@@ -69,7 +81,8 @@ function renderHeatmap(daily) {
     tooltip: { formatter: (p) => `${p.data[0]} · ${money(-p.data[1])}` },
     visualMap: {
       min: 0, max: Math.max(...daily.map((d) => d[1])), orient: "horizontal",
-      left: "center", bottom: 0, inRange: { color: ["#E4E6DC", "#8FB39C", "#1E5C40"] },
+      left: "center", bottom: 0, itemWidth: 14, itemHeight: 86,
+      inRange: { color: ["#eeeae1", "#9dbdaf", "#214a3f"] },
       textStyle: { color: CHART.inkSoft, fontFamily: CHART.mono, fontSize: 10 },
     },
     calendar: {
@@ -100,14 +113,14 @@ function renderTrend(ot) {
       axisLabel: { color: CHART.inkSoft, fontFamily: CHART.mono, fontSize: 10, formatter: (v) => "$" + v },
     },
     series: ot.series.map((s) => ({
-      name: s.name, type: "line", stack: "total", smooth: true, symbol: "none",
-      areaStyle: { opacity: 0.5 }, data: s.data,
+      name: s.name, type: "line", stack: "total", smooth: 0.25, symbol: "none",
+      lineStyle: { width: 1.4 }, areaStyle: { opacity: 0.38 }, data: s.data,
     })),
   }, true);
 }
 
-const TONE = { watch: "#9E3B2A", positive: "#1E5C40", neutral: "#5C6056" };
-const TONE_FADE = { watch: "rgba(158,59,42,0.13)", positive: "rgba(30,92,64,0.13)", neutral: "rgba(92,96,86,0.11)" };
+const TONE = { watch: "#a94130", positive: "#214a3f", neutral: "#66706c" };
+const TONE_FADE = { watch: "rgba(169,65,48,0.12)", positive: "rgba(33,74,63,0.12)", neutral: "rgba(102,112,108,0.1)" };
 const miniCharts = [];
 
 function renderMini(el, spec, tone) {
@@ -164,15 +177,15 @@ function renderDiscoveries(list) {
         <summary>See ${d.evidence_count} transaction${d.evidence_count === 1 ? "" : "s"}</summary>
         <table class="txtable"><tbody>
           ${d.evidence.map((t) => `<tr>
-            <td>${t.date}</td><td>${t.payee || "—"}</td>
-            <td><span class="cat">${t.category}</span></td>
+            <td>${esc(t.date)}</td><td>${esc(t.payee || "—")}</td>
+            <td><span class="cat">${esc(t.category)}</span></td>
             <td class="r ${t.amount >= 0 ? "amt-pos" : "amt-neg"}">${money(t.amount)}</td></tr>`).join("")}
         </tbody></table>
       </details>` : "";
     const viz = d.chart ? `<div class="disc-viz" id="mini-${i}"></div>` : "";
-    return `<article class="disc disc-${d.tone}">
-      <div class="disc-body"><h4>${d.title}</h4>
-        <p class="disc-sum">${d.summary}</p>${ev}</div>
+    return `<article class="disc disc-${esc(d.tone)}">
+      <div class="disc-body"><h4>${esc(d.title)}</h4>
+        <p class="disc-sum">${esc(d.summary)}</p>${ev}</div>
       ${viz}
     </article>`;
   }).join("");
@@ -182,7 +195,10 @@ function renderDiscoveries(list) {
   });
 }
 
-const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+const esc = (s) => String(s).replace(
+  /[&<>"']/g,
+  (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
+);
 
 const COACH_SKELETON = `<div class="coachcards">${[0, 1, 2].map(() => `
   <article class="ci ci-skel">
@@ -253,9 +269,9 @@ async function loadInsights() {
     $("#recurring").innerHTML = ins.recurring.length
       ? ins.recurring.map((r) => `
         <div class="rec ${r.active ? "" : "inactive"}">
-          <div class="rec-main"><span class="rec-name">${r.payee}</span>
-            <span class="cat">${r.category}</span>${r.active ? "" : '<span class="rec-flag">inactive</span>'}</div>
-          <div class="rec-meta">${r.cadence} · ${r.occurrences}× · last ${r.last_charge}</div>
+          <div class="rec-main"><span class="rec-name">${esc(r.payee)}</span>
+            <span class="cat">${esc(r.category)}</span>${r.active ? "" : '<span class="rec-flag">inactive</span>'}</div>
+          <div class="rec-meta">${esc(r.cadence)} · ${r.occurrences}× · last ${esc(r.last_charge)}</div>
           <div class="rec-amt">${money(-r.monthly_cost)}<span>/mo</span></div>
         </div>`).join("")
       : '<div class="empty">No recurring charges detected yet.</div>';
@@ -286,31 +302,66 @@ function qs(obj) {
   return p.toString();
 }
 
-// ── tabs ─────────────────────────────────────────────────────────────────────
-document.querySelectorAll(".tab").forEach((t) =>
-  t.addEventListener("click", () => {
-    document.querySelectorAll(".tab").forEach((x) => x.classList.remove("active"));
-    t.classList.add("active");
-    document.querySelectorAll(".panel").forEach((p) => p.classList.add("hidden"));
-    $("#tab-" + t.dataset.tab).classList.remove("hidden");
-    const tab = t.dataset.tab;
-    // Period only affects the Statement and Ledger views.
-    $("#periodbar").style.display = (tab === "dashboard" || tab === "transactions") ? "flex" : "none";
-    if (tab === "insights" && !insightsLoaded) {
-      insightsLoaded = true;
-      loadInsights().catch(console.error);
-    }
-    // ECharts can't size a hidden container; resize once this tab is visible.
-    setTimeout(() => Object.values(charts).forEach((c) => c.resize()), 0);
-  })
-);
+// ── sections ─────────────────────────────────────────────────────────────────
+const SECTION_TITLES = {
+  dashboard: "Statement",
+  insights: "Discoveries",
+  transactions: "Ledger",
+  ask: "Advisor",
+  connect: "Import & sync",
+};
+
+function activateSection(button, updateHash = true) {
+  const tab = button.dataset.tab;
+  document.querySelectorAll(".tab").forEach((item) => {
+    const selected = item === button;
+    item.classList.toggle("active", selected);
+    item.setAttribute("aria-selected", String(selected));
+    item.tabIndex = selected ? 0 : -1;
+  });
+  document.querySelectorAll(".panel").forEach((panel) => panel.classList.add("hidden"));
+  $("#tab-" + tab).classList.remove("hidden");
+  $("#pageTitle").textContent = SECTION_TITLES[tab];
+  document.title = `${SECTION_TITLES[tab]} — Daybook`;
+
+  // Period only affects the Statement and Ledger views.
+  $("#periodbar").style.display = (tab === "dashboard" || tab === "transactions") ? "flex" : "none";
+  if (tab === "insights" && !insightsLoaded) {
+    insightsLoaded = true;
+    loadInsights().catch(console.error);
+  }
+  if (updateHash) history.replaceState(null, "", tab === "dashboard" ? location.pathname : `#${tab}`);
+
+  // ECharts can't size a hidden container; resize once its section is visible.
+  setTimeout(() => Object.values(charts).forEach((c) => c.resize()), 0);
+}
+
+const sectionTabs = [...document.querySelectorAll(".tab")];
+sectionTabs.forEach((button, index) => {
+  button.addEventListener("click", () => activateSection(button));
+  button.addEventListener("keydown", (event) => {
+    if (!["ArrowDown", "ArrowRight", "ArrowUp", "ArrowLeft", "Home", "End"].includes(event.key)) return;
+    event.preventDefault();
+    let next = index;
+    if (event.key === "ArrowDown" || event.key === "ArrowRight") next = (index + 1) % sectionTabs.length;
+    if (event.key === "ArrowUp" || event.key === "ArrowLeft") next = (index - 1 + sectionTabs.length) % sectionTabs.length;
+    if (event.key === "Home") next = 0;
+    if (event.key === "End") next = sectionTabs.length - 1;
+    sectionTabs[next].focus();
+    activateSection(sectionTabs[next]);
+  });
+});
+
+const initialSection = location.hash.slice(1);
+const initialTab = sectionTabs.find((button) => button.dataset.tab === initialSection);
+activateSection(initialTab || sectionTabs[0], false);
 $("#range").addEventListener("change", refresh);
 
 // ── status ───────────────────────────────────────────────────────────────────
 async function loadStatus() {
   const s = await api("/api/status");
   $("#status").innerHTML =
-    `<span class="dot ${s.llm_configured ? "on" : "off"}"></span>Advisor ${s.llm_configured ? "ready (" + s.llm_model + ")" : "off — add LLM key"}<br>` +
+    `<span class="dot ${s.llm_configured ? "on" : "off"}"></span>Advisor ${s.llm_configured ? "ready" : "not configured"}<br>` +
     `<span class="dot ${s.simplefin_connected ? "on" : "off"}"></span>SimpleFIN ${s.simplefin_connected ? "connected" : "not connected"}`;
   $("#chatPrivacy").textContent = s.llm_configured
     ? "Heads up: your question and the relevant transactions are sent to " + s.llm_model + " to answer."
@@ -323,7 +374,8 @@ async function loadStatus() {
 // ── dashboard ────────────────────────────────────────────────────────────────
 function bar(name, value, max, cls) {
   const pct = max > 0 ? Math.round((value / max) * 100) : 0;
-  return `<div class="bar-row"><span class="name" title="${name}">${name}</span>
+  const safeName = esc(name);
+  return `<div class="bar-row"><span class="name" title="${safeName}">${safeName}</span>
     <div class="bar-track"><div class="bar-fill ${cls || ""}" style="width:${pct}%"></div></div>
     <span class="amt">${money(value)}</span></div>`;
 }
@@ -343,17 +395,23 @@ async function loadDashboard() {
   }
 
   const read = s.income > 0
-    ? `You kept ${money(s.net)} of the ${money(s.income)} that came in — ${money(-s.spending)} went out.`
-    : `${money(-s.spending)} went out this period, with nothing recorded coming in.`;
+    ? s.net >= 0
+      ? `${money(s.income)} came in and ${money(-s.spending)} went out, leaving ${money(s.net)}.`
+      : `${money(s.income)} came in and ${money(-s.spending)} went out. Outflow exceeded income by ${money(-s.net)}.`
+    : `${money(-s.spending)} went out this period, with no recorded income.`;
   $("#summary").innerHTML = `
-    <p class="eyebrow">Statement summary · ${periodLabel}</p>
-    <div class="net-fig ${s.net >= 0 ? "pos" : "neg"}">${money(s.net)}</div>
-    <div class="net-label">Net for the period</div>
-    <p class="read">${read}</p>
-    <div class="tallies">
-      <div class="tally"><span class="t-label">Money in</span><span class="t-val pos">${money(s.income)}</span></div>
-      <div class="tally"><span class="t-label">Money out</span><span class="t-val neg">${money(s.spending)}</span></div>
-      <div class="tally"><span class="t-label">Transactions</span><span class="t-val">${s.count}</span></div>
+    <p class="eyebrow">Net position · ${periodLabel}</p>
+    <div class="summary-main">
+      <div class="net-fig ${s.net >= 0 ? "pos" : "neg"}">${money(s.net)}</div>
+      <div class="net-label">${s.net >= 0 ? "Left after outflow" : "More out than in"}</div>
+    </div>
+    <div class="summary-detail">
+      <p class="read">${read}</p>
+      <div class="tallies">
+        <div class="tally"><span class="t-label">In</span><span class="t-val pos">${money(s.income)}</span></div>
+        <div class="tally"><span class="t-label">Out</span><span class="t-val neg">${money(s.spending)}</span></div>
+        <div class="tally"><span class="t-label">Entries</span><span class="t-val">${s.count}</span></div>
+      </div>
     </div>`;
 
   renderDonut(d.by_category);
@@ -379,8 +437,8 @@ async function loadTransactions() {
   const rows = await api("/api/transactions?" + qs({ start, end, search: $("#txSearch").value, limit: 300 }));
   $("#txbody").innerHTML = rows.length
     ? rows.map((t) =>
-        `<tr><td>${t.date}</td><td>${t.payee || "—"}</td><td><span class="cat">${t.category}</span></td>
-         <td>${t.account}</td><td class="r ${t.amount >= 0 ? "amt-pos" : "amt-neg"}">${money(t.amount)}</td></tr>`
+        `<tr><td>${esc(t.date)}</td><td>${esc(t.payee || "—")}</td><td><span class="cat">${esc(t.category)}</span></td>
+         <td>${esc(t.account)}</td><td class="r ${t.amount >= 0 ? "amt-pos" : "amt-neg"}">${money(t.amount)}</td></tr>`
       ).join("")
     : '<tr><td colspan="5" class="empty">No transactions. Import a file or sync to get started.</td></tr>';
 }
@@ -389,7 +447,7 @@ async function loadTransactions() {
 async function loadAccounts() {
   const accts = await api("/api/accounts");
   $("#importAccount").innerHTML = accts.length
-    ? accts.map((a) => `<option value="${a.id}">${a.name} (${a.type})</option>`).join("")
+    ? accts.map((a) => `<option value="${a.id}">${esc(a.name)} (${esc(a.type)})</option>`).join("")
     : '<option value="">— create an account first —</option>';
 }
 $("#createAcct").addEventListener("click", async () => {
