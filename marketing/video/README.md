@@ -7,9 +7,10 @@ comparison; v3 is the recommended social upload.
 ## V3 — organic share cut
 
 `output/daybook-launch-v3-organic-square.mp4` is the recommended X upload. It is a
-15-second, full-bleed product recording with a smooth cursor and a deliberately steady
-camera. The frame pans only to expose a navigation click and zooms only to make a
-specific result easier to read. There is no ad frame, headline layer, or end card.
+15-second product recording with a smooth cursor and a deliberately steady camera. It
+opens on the complete app, makes one centered 22% push-in, holds that framing across
+the feature tour, and returns to the complete app for the ending. There is no lateral
+camera movement, ad frame, headline layer, or end card.
 
 ```bash
 cd marketing/video/v2
@@ -51,7 +52,7 @@ preserves the H.264 picture while creating the final upload.
 
 It writes:
 
-- `output/daybook-launch-v2-square.mp4` — recommended mobile-first X video
+- `output/daybook-launch-v2-square.mp4` — alternate designed X video
 - `output/daybook-launch-v2-cover.png` — optional v2 thumbnail
 
 ## V1 — widescreen launch film
