@@ -1,18 +1,23 @@
-# Personal Finance Hub
+# Daybook
 
-A **local-first, privacy-first** personal finance hub you run on your own machine.
-Pull your bank/transaction data into a local SQLite file, visualize it, and ask an
-LLM advisor questions about your spending — like having a candid personal finance
-person who's actually looked at your statements.
+**A private record of your money, run on your machine.**
 
-- **No hosted version, no account, no server collecting anything.** You clone it, you run it.
-- **Your data lives in one local file** (`data/finance.db`), which is gitignored.
-- **Model/provider-agnostic** LLM: point it at OpenRouter (default), OpenAI, a local
-  model, or your own proxy — one config line.
+Daybook is an open-source, local-first personal finance ledger. It imports bank
+transactions into SQLite, turns them into an auditable financial statement, finds
+patterns in your history, and can answer questions through an optional LLM.
+
+- No hosted account and no telemetry. Clone it, run it, own it.
+- Your financial history lives in one gitignored file: `data/finance.db`.
+- Manual CSV/OFX/QFX import is fully local and works without an API key.
+- The advisor is optional and works with any OpenAI-compatible endpoint, including
+  local models.
+
+> **Project status:** Daybook is useful today, but still early. It is designed for
+> one person on one machine; expect the data model and APIs to evolve before 1.0.
 
 ---
 
-## Where your data actually goes (read this)
+## Where your data actually goes
 
 There are two separate moments where data *could* leave your machine. Be deliberate about each:
 
@@ -22,7 +27,7 @@ There are two separate moments where data *could* leave your machine. Be deliber
 | **SimpleFIN sync** | Bank → SimpleFIN + MX servers → your machine | 🟡 One trusted middleman retrieves your data, then copies it here. Convenience, not maximum privacy. |
 | **Ask the advisor** (LLM) | Your question + the transactions relevant to it → your chosen LLM endpoint | 🔴 Leaves your machine when *you* ask. Off by default. Use a local model (Ollama) for zero-leak. |
 
-> There is **no** way to auto-sync a bank with zero third party — banks don't allow it.
+> There is **no** way to auto-sync a bank with zero third party — banks do not allow it.
 > Manual import is the only fully-local path; SimpleFIN is the low-friction convenience.
 > The advisor only ever sees what you send it, when you send it.
 
@@ -34,7 +39,7 @@ With **make** (easiest):
 
 ```bash
 make setup     # create venv, install deps, create .env
-make run       # start at http://127.0.0.1:8000
+make run       # start at http://127.0.0.1:8888
 ```
 
 Run `make` on its own to see all commands (`run`, `dev`, `reset-data`, `clean`).
@@ -83,7 +88,7 @@ turns on the moment you add `LLM_API_KEY`.
 
 ### Import a file (fully local)
 1. In your bank's website, download transactions as **CSV**, **OFX**, or **QFX**.
-2. **Connect & import** tab → create an account → pick the file → **Import**.
+2. **Import & sync** → create an account → pick the file → **Import statement**.
 3. Re-importing the same file is safe — duplicates are detected and skipped.
 
 CSV columns are auto-detected (date / amount / description, or separate debit &
@@ -92,15 +97,15 @@ credit columns). Amount convention: **positive = money in, negative = money out*
 ### SimpleFIN sync (auto-pull, US/Canada)
 1. Sign up at [beta-bridge.simplefin.org](https://beta-bridge.simplefin.org) (~$15/yr),
    connect your bank there, and create a **setup token**.
-2. **Connect & import** tab → paste the token → **Connect** → **Sync now**.
+2. **Import & sync** → paste the token → **Connect** → **Sync now**.
 3. The token is exchanged once for a local access URL stored in your DB; you won't
    need the token again.
 
-### Explore & discover
-The **Statement** tab visualizes a period — category donut, an income→categories
+### Explore and discover
+The **Statement** view summarizes a period — category donut, an income→categories
 **Sankey**, and a daily **spending calendar**.
 
-The **Discoveries** tab is the point of the app, and it works in two tiers.
+The **Discoveries** view is the point of the app, and it works in two tiers.
 
 **Tier 1 — deterministic (always on, no API key needed).** Lenses computed exactly
 from your data, ranked by how unusual each is *for you*, each clickable to the
@@ -173,16 +178,27 @@ app/
   coach.py             Tier 2 — LLM narration of Tier-1 facts (optional)
   llm.py               provider-agnostic client (tool-calling + completion)
   api.py               FastAPI: dashboard + JSON API (binds 127.0.0.1)
-  web/                 vanilla-JS dashboard (no CDN, fully offline)
+  web/                 Daybook's vanilla-JS interface (no CDN, fully offline)
   web/vendor/          ECharts, vendored locally for offline charts
 ```
 
-Single process, single SQLite file, no build step for the frontend.
+Single process, single SQLite file, no build step for the frontend. The interface uses
+system fonts and vendored assets, so opening Daybook does not make silent requests to a
+font service, analytics provider, or CDN.
 
-## Roadmap / deliberately deferred
+## Roadmap
 LLM-assisted categorization · budgets & goals · more connectors (Teller, Enable
-Banking) · a maturer React frontend · encryption-at-rest for the DB. All have clean
-seams; none are needed for v1.
+Banking) · encryption-at-rest for the DB · better import review and correction tools.
+All have clean seams; none are needed for the current single-user app.
+
+## Contributing
+
+Small, focused improvements are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md)
+for local setup, project boundaries, and the privacy checklist. Use an issue for larger
+changes so the approach can be agreed before either of us invests heavily.
+
+Found a security or privacy problem? Please follow [SECURITY.md](SECURITY.md) instead
+of opening a public issue.
 
 ## License
 [MIT](LICENSE) — use it, fork it, build on it. Attribution appreciated but not required.

@@ -1,0 +1,49 @@
+name: Bug report
+description: Report a reproducible problem in Daybook
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a problem. Remove all real financial data, API keys, and bank tokens before sharing logs or examples.
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Tell us what you expected and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Start Daybook with…
+        2. Open…
+        3. See…
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      placeholder: e.g. main at 6165b3a
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: e.g. macOS 15, Python 3.12, Firefox 128
+  - type: textarea
+    id: context
+    attributes:
+      label: Safe diagnostic context
+      description: Share sanitized logs or fictional sample rows only. Never attach finance.db or a real bank export.
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy check
+      options:
+        - label: I removed real transaction data, credentials, tokens, and API keys.
+          required: true

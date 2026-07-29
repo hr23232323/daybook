@@ -1,0 +1,35 @@
+name: Feature request
+description: Propose an improvement to Daybook
+title: "[Idea]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: Describe the job or frustration before describing the interface.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed approach
+      description: Explain the smallest useful version and any alternatives you considered.
+    validations:
+      required: true
+  - type: dropdown
+    id: data-path
+    attributes:
+      label: Does this change where financial data goes?
+      options:
+        - "No"
+        - "Yes"
+        - "Unsure"
+    validations:
+      required: true
+  - type: textarea
+    id: privacy
+    attributes:
+      label: Privacy and dependency impact
+      description: Note any new service, network request, persisted field, credential, or package.
