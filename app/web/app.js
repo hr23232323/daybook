@@ -388,13 +388,37 @@ async function loadDashboard() {
   const periodLabel = $("#range").selectedOptions[0].textContent;
 
   if (!s.count) {
-    $("#summary").innerHTML =
-      `<div class="empty-hero">No transactions yet. Open <b>Import &amp; sync</b> to add your first account.</div>`;
+    $("#statementData").hidden = true;
+    $("#summary").classList.add("summary-empty");
+    $("#summary").innerHTML = `
+      <div class="first-run">
+        <div class="first-run-copy">
+          <p class="eyebrow">Local ledger · ready</p>
+          <h2>Your money stays quiet until you bring it in.</h2>
+          <p>Import a bank statement to begin. CSV, OFX, and QFX files are read on this machine and never uploaded.</p>
+          <div class="first-run-actions">
+            <button id="emptyImport" class="primary">Import a statement</button>
+            <span>Exploring first? Run <code>make seed</code> for fictional data.</span>
+          </div>
+        </div>
+        <div class="first-run-ledger" aria-hidden="true">
+          <span>DATE</span><span>DESCRIPTION</span><span>AMOUNT</span>
+          <i></i><i></i><i></i>
+          <i></i><i></i><i></i>
+          <i></i><i></i><i></i>
+          <strong>Nothing recorded yet</strong>
+        </div>
+      </div>`;
+    $("#emptyImport").addEventListener("click", () => {
+      activateSection(sectionTabs.find((button) => button.dataset.tab === "connect"));
+    });
     $("#topMerchants").innerHTML = "";
     ["chartCategory", "chartFlow", "chartHeatmap"].forEach((id) => charts[id] && charts[id].clear());
     return;
   }
 
+  $("#statementData").hidden = false;
+  $("#summary").classList.remove("summary-empty");
   const read = s.income > 0
     ? s.net >= 0
       ? `${money(s.income)} came in and ${money(-s.spending)} went out, leaving ${money(s.net)}.`
