@@ -1,7 +1,7 @@
 # Security policy
 
 Daybook handles unusually sensitive data. Please report security and privacy issues
-privately through a [GitHub security advisory](https://github.com/hr23232323/personal-finance-hub/security/advisories/new).
+privately through a [GitHub security advisory](https://github.com/hr23232323/daybook/security/advisories/new).
 Do not include real financial records, bank credentials, SimpleFIN tokens, API keys,
 or database files in the report.
 
