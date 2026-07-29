@@ -13,6 +13,8 @@ from openai import OpenAI
 
 from . import config, queries
 
+THINKING_LEVELS = {"auto", "low", "medium", "high"}
+
 # The model can only ever call these read-only functions.
 TOOL_FUNCS = {
     "list_accounts": queries.list_accounts,
@@ -79,7 +81,9 @@ def _system_prompt() -> str:
         "Be concise and direct. Cite actual dollar figures and dates from the tools. "
         "Proactively point out patterns, wasteful or recurring spending, and things "
         "worth questioning — like a good advisor reviewing someone's statements. "
-        "If the data can't answer something, say so plainly."
+        "Call independent tools together when useful. Once you have enough evidence, "
+        "stop researching and answer the question. If the data can't answer something, "
+        "say so plainly."
     )
 
 
@@ -131,25 +135,68 @@ def complete(system: str, user: str, max_tokens: int = 10000) -> str:
     return (resp.choices[0].message.content or "").strip()
 
 
-def chat(message: str, history: list | None = None, max_rounds: int = 6) -> str:
+def _reasoning_context(msg) -> dict:
+    """Keep provider reasoning state intact across tool-calling turns."""
+    details = getattr(msg, "reasoning_details", None)
+    if details:
+        return {
+            "reasoning_details": [
+                item.model_dump(exclude_none=True) if hasattr(item, "model_dump") else item
+                for item in details
+            ]
+        }
+    reasoning = getattr(msg, "reasoning", None) or getattr(msg, "reasoning_content", None)
+    return {"reasoning": reasoning} if reasoning else {}
+
+
+def chat(message: str, history: list | None = None, thinking: str = "medium",
+         max_tool_rounds: int = 10) -> str:
     if not config.llm_configured():
         raise RuntimeError(
             "No LLM key set. Add LLM_API_KEY to your .env (OpenRouter by default) "
             "to use the advisor. Everything else works without it."
         )
+    if thinking not in THINKING_LEVELS:
+        raise ValueError(f"Unsupported thinking level: {thinking}")
 
     client = OpenAI(base_url=config.LLM_BASE_URL, api_key=config.LLM_API_KEY)
     messages = [{"role": "system", "content": _system_prompt()}]
     messages += history or []
     messages.append({"role": "user", "content": message})
 
-    for _ in range(max_rounds):
-        resp = client.chat.completions.create(
-            model=config.LLM_MODEL, messages=messages, tools=TOOLS, tool_choice="auto",
-        )
+    reasoning_kwargs = {} if thinking == "auto" else {"reasoning_effort": thinking}
+
+    for round_index in range(max_tool_rounds + 1):
+        force_answer = round_index == max_tool_rounds
+        request_messages = messages
+        kwargs = {
+            "model": config.LLM_MODEL,
+            "messages": request_messages,
+            "max_completion_tokens": 10000,
+            **reasoning_kwargs,
+        }
+        if force_answer:
+            request_messages = [
+                *messages,
+                {
+                    "role": "system",
+                    "content": (
+                        "Research is complete. Answer the user's original question now "
+                        "using the tool results above. Do not call another tool, mention "
+                        "the research limit, or ask them to narrow the question unless "
+                        "the available data genuinely cannot answer it."
+                    ),
+                },
+            ]
+            kwargs["messages"] = request_messages
+        else:
+            kwargs.update({"tools": TOOLS, "tool_choice": "auto"})
+
+        resp = client.chat.completions.create(**kwargs)
         msg = resp.choices[0].message
 
         assistant = {"role": "assistant", "content": msg.content or ""}
+        assistant.update(_reasoning_context(msg))
         if msg.tool_calls:
             assistant["tool_calls"] = [
                 {"id": tc.id, "type": "function",
@@ -158,7 +205,7 @@ def chat(message: str, history: list | None = None, max_rounds: int = 6) -> str:
             ]
         messages.append(assistant)
 
-        if not msg.tool_calls:
+        if force_answer or not msg.tool_calls:
             return msg.content or ""
 
         for tc in msg.tool_calls:
@@ -171,4 +218,5 @@ def chat(message: str, history: list | None = None, max_rounds: int = 6) -> str:
             messages.append({"role": "tool", "tool_call_id": tc.id,
                              "content": json.dumps(result, default=str)})
 
-    return "I looked into it but couldn't converge on an answer — try narrowing the question."
+    # The synthesis-only final request above makes this unreachable in normal use.
+    return "I gathered the records but couldn't produce an answer."

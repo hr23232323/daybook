@@ -749,6 +749,25 @@ details > .composer { margin-top: 9px; }
 
 /* Advisor */
 .chat { max-width: 790px; margin-inline: auto; }
+.advisor-control {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.advisor-control label {
+  color: var(--ink-faint);
+  font: 600 8.5px/1 var(--sans);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.advisor-control select {
+  width: 112px;
+  min-height: 34px;
+  padding: 6px 27px 6px 9px;
+  background-color: var(--paper);
+  font-size: 10.5px;
+}
 .chatlog {
   min-height: 350px;
   max-height: 55vh;
@@ -777,6 +796,7 @@ details > .composer { margin-top: 9px; }
 .msg.bot { align-self: flex-start; background: var(--paper); }
 .msg.user { align-self: flex-end; border-color: var(--navy); background: var(--navy); color: var(--cream); }
 .msg.thinking { color: var(--ink-soft); font-style: italic; }
+.chatlog[aria-busy="true"] .msg.thinking { border-left-color: var(--copper); }
 .chat-composer {
   padding-top: 14px;
   border-top: 1px solid var(--rule);
@@ -940,6 +960,9 @@ details > .composer { margin-top: 9px; }
   .composer { flex-direction: column; }
   .composer button { width: 100%; }
   .msg { max-width: 92%; }
+  .chat .block-head { align-items: stretch; flex-direction: column; }
+  .advisor-control { justify-content: space-between; }
+  .advisor-control select { width: 132px; }
   .connect-intro h2 { font-size: 27px; }
   .connect-card { min-height: 0; }
   .app-footer { justify-content: center; }

@@ -4,13 +4,14 @@ Binds to 127.0.0.1 only — reachable from your machine, nobody else's.
 Run:  python -m app.api      (or)   uvicorn app.api:app --reload
 """
 from pathlib import Path
+from typing import Literal
 
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from . import analysis, coach, config, db, discover, queries
 from .connectors import manual, simplefin
@@ -157,14 +158,15 @@ def simplefin_sync(body: SyncIn):
 # ── advisor chat ─────────────────────────────────────────────────────────────
 class ChatIn(BaseModel):
     message: str
-    history: list = []
+    history: list = Field(default_factory=list)
+    thinking: Literal["auto", "low", "medium", "high"] = "medium"
 
 
 @app.post("/api/chat")
 def chat(body: ChatIn):
     from . import llm  # imported lazily so the app runs even without the openai extra configured
     try:
-        reply = llm.chat(body.message, body.history)
+        reply = llm.chat(body.message, body.history, thinking=body.thinking)
     except RuntimeError as e:
         raise HTTPException(400, str(e))
     except Exception as e:

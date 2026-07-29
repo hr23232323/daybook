@@ -33,6 +33,7 @@ seed: ## Fill the DB with ~14 months of realistic fake data to explore
 
 check: ## Run lightweight contributor checks
 	$(PY) -m compileall -q app scripts
+	$(PY) -m unittest discover -s tests -q
 	@if command -v node >/dev/null 2>&1; then \
 		node --check app/web/app.js; \
 	else \

@@ -141,7 +141,8 @@ Charts use a vendored copy of ECharts (no CDN, fully offline).
 Go to **Ask the advisor** and ask things like *"Where did most of my money go last
 month?"*, *"Any recurring subscriptions I might have forgotten?"*, *"What's a
 purchase worth rethinking?"* The model answers by running read-only queries against
-your local data (it can look, never change anything).
+your local data (it can look, never change anything). The **Thinking** control trades
+speed and token use for deeper multi-step analysis; **Balanced** is the default.
 
 ---
 

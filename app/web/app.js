@@ -359,14 +359,46 @@ activateSection(initialTab || sectionTabs[0], false);
 $("#range").addEventListener("change", refresh);
 
 // ── status ───────────────────────────────────────────────────────────────────
+const THINKING_LEVELS = {
+  auto: { label: "Auto", note: "the provider chooses the depth" },
+  low: { label: "Quick", note: "lower latency and token use" },
+  medium: { label: "Balanced", note: "a practical default for most questions" },
+  high: { label: "Deep", note: "more analysis, latency, and token use" },
+};
+const thinkingSelect = $("#thinkingLevel");
+let advisorStatus;
+
+try {
+  const savedThinking = localStorage.getItem("daybook.thinkingLevel");
+  if (THINKING_LEVELS[savedThinking]) thinkingSelect.value = savedThinking;
+} catch (_) {
+  // Storage may be unavailable in a hardened browser; the in-page control still works.
+}
+
+function renderAdvisorFineprint() {
+  const level = THINKING_LEVELS[thinkingSelect.value];
+  const privacy = advisorStatus?.llm_configured
+    ? `Your question and relevant transactions are sent to ${advisorStatus.llm_model}.`
+    : "The advisor is off. Add LLM_API_KEY to your .env to enable it.";
+  $("#chatPrivacy").textContent = `${privacy} Thinking: ${level.label} — ${level.note}.`;
+}
+
+thinkingSelect.addEventListener("change", () => {
+  try {
+    localStorage.setItem("daybook.thinkingLevel", thinkingSelect.value);
+  } catch (_) {
+    // The selection still applies to this session.
+  }
+  renderAdvisorFineprint();
+});
+
 async function loadStatus() {
   const s = await api("/api/status");
+  advisorStatus = s;
   $("#status").innerHTML =
     `<span class="dot ${s.llm_configured ? "on" : "off"}"></span>Advisor ${s.llm_configured ? "ready" : "not configured"}<br>` +
     `<span class="dot ${s.simplefin_connected ? "on" : "off"}"></span>SimpleFIN ${s.simplefin_connected ? "connected" : "not connected"}`;
-  $("#chatPrivacy").textContent = s.llm_configured
-    ? "Heads up: your question and the relevant transactions are sent to " + s.llm_model + " to answer."
-    : "The advisor is off. Add LLM_API_KEY to your .env to enable it.";
+  renderAdvisorFineprint();
   $("#sfStatus").innerHTML = s.simplefin_connected
     ? '<span class="pill green">connected</span>'
     : '<span class="muted">Not connected yet — paste a setup token below.</span>';
@@ -532,6 +564,7 @@ $("#sfSync").addEventListener("click", async () => {
 
 // ── chat ─────────────────────────────────────────────────────────────────────
 const chatHistory = [];
+let chatBusy = false;
 function addMsg(text, who) {
   const el = document.createElement("div");
   el.className = "msg " + who;
@@ -542,20 +575,35 @@ function addMsg(text, who) {
 }
 async function sendChat() {
   const text = $("#chatInput").value.trim();
-  if (!text) return;
+  if (!text || chatBusy) return;
+  chatBusy = true;
+  const effort = thinkingSelect.value;
+  const sendButton = $("#chatSend");
+  const input = $("#chatInput");
+  sendButton.disabled = true;
+  input.disabled = true;
+  thinkingSelect.disabled = true;
+  $("#chatlog").setAttribute("aria-busy", "true");
   $("#chatInput").value = "";
   addMsg(text, "user");
-  const thinking = addMsg("Thinking…", "bot thinking");
+  const thinking = addMsg(`Reviewing your ledger · ${THINKING_LEVELS[effort].label.toLowerCase()}…`, "bot thinking");
   try {
     const r = await api("/api/chat", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: text, history: chatHistory }),
+      body: JSON.stringify({ message: text, history: chatHistory, thinking: effort }),
     });
     thinking.remove();
     addMsg(r.reply, "bot");
     chatHistory.push({ role: "user", content: text }, { role: "assistant", content: r.reply });
   } catch (e) {
     thinking.className = "msg bot"; thinking.textContent = "⚠ " + e.message;
+  } finally {
+    chatBusy = false;
+    sendButton.disabled = false;
+    input.disabled = false;
+    thinkingSelect.disabled = false;
+    $("#chatlog").setAttribute("aria-busy", "false");
+    input.focus();
   }
 }
 $("#chatSend").addEventListener("click", sendChat);
