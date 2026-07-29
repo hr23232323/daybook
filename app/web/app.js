@@ -9,11 +9,12 @@ const api = async (path, opts) => {
 
 // ── charts (ECharts, themed to the Daybook ledger) ──────────────────────────
 const CHART = {
-  ink: "#18201e", inkSoft: "#66706c", green: "#214a3f", oxblood: "#a94130",
-  rule: "#cfc9bd", paper: "#f7f4ed", surface: "#f7f4ed",
+  ink: "#18272e", inkSoft: "#647278", green: "#39705b", oxblood: "#b44a3a",
+  blue: "#426777", copper: "#b36a3c",
+  rule: "#cbc5b9", paper: "#f5f1e9", surface: "#f5f1e9",
   sans: '"Avenir Next", Avenir, "Segoe UI", sans-serif',
   mono: 'ui-monospace, "SF Mono", Menlo, monospace',
-  palette: ["#214a3f", "#a94130", "#a8751e", "#41677a", "#70566f", "#79684f", "#58816c", "#94938b"],
+  palette: ["#426777", "#b36a3c", "#39705b", "#6a7c85", "#765a6b", "#8c7453", "#75908a", "#9b9790"],
 };
 const charts = {};
 function chart(id) {
@@ -82,7 +83,7 @@ function renderHeatmap(daily) {
     visualMap: {
       min: 0, max: Math.max(...daily.map((d) => d[1])), orient: "horizontal",
       left: "center", bottom: 0, itemWidth: 14, itemHeight: 86,
-      inRange: { color: ["#eeeae1", "#9dbdaf", "#214a3f"] },
+      inRange: { color: ["#ece8e0", "#9eb1ba", "#426777"] },
       textStyle: { color: CHART.inkSoft, fontFamily: CHART.mono, fontSize: 10 },
     },
     calendar: {
@@ -119,8 +120,8 @@ function renderTrend(ot) {
   }, true);
 }
 
-const TONE = { watch: "#a94130", positive: "#214a3f", neutral: "#66706c" };
-const TONE_FADE = { watch: "rgba(169,65,48,0.12)", positive: "rgba(33,74,63,0.12)", neutral: "rgba(102,112,108,0.1)" };
+const TONE = { watch: "#b44a3a", positive: "#39705b", neutral: "#647278" };
+const TONE_FADE = { watch: "rgba(180,74,58,0.12)", positive: "rgba(57,112,91,0.12)", neutral: "rgba(100,114,120,0.1)" };
 const miniCharts = [];
 
 function renderMini(el, spec, tone) {
