@@ -2,5 +2,5 @@ fastapi==0.140.13
 uvicorn[standard]==0.51.0
 python-dotenv==1.2.2
 python-multipart==0.0.32
-openai==2.50.0
+openai==3.19.2
 ofxtools==1.1.1
